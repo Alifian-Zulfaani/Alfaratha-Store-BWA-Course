@@ -13,6 +13,7 @@ use Exception;
 
 use Midtrans\Snap;
 use Midtrans\Config;
+use Midtrans\Notification;
 
 class CheckoutController extends Controller
 {
@@ -94,6 +95,62 @@ class CheckoutController extends Controller
 
     public function callback(Request $request)
     {
+        // Set midtrans configure
+        Config::$serverKey = config('services.midtrans.serverKey');
+        Config::$isProduction = config('services.midtrans.is$isProduction');
+        Config::$isSanitized = config('services.midtrans.is$isSanitized');
+        Config::$is3ds = config('services.midtrans.is$is3ds');
 
+        // Instance midtrans notification
+        $notification = new Notification();
+
+        // Assign to variable for easy code
+        $status = $notification->transaction_status;
+        $type = $notification->payment_type;
+        $fraud = $notification->fraud_status;
+        $order_id = $notification->order_id;
+
+        // Find transaction based on ID
+        $transaction = Transaction::findOrFail($order_id);
+
+        // Handle notification status
+        if ($status == 'capture')
+        {
+            if ($type == 'credit_card')
+            {
+                if ($fraud == 'challenge')
+                {
+                    $transaction->status = 'PENDING';
+                }
+                else
+                {
+                    $transaction->status = 'SUCCESS';
+                }
+
+            }
+        }
+        else if ($status == 'settlement')
+        {
+            $transaction->status = 'SUCCESS';
+        }
+        else if ($status == 'pending')
+        {
+            $transaction->status = 'PENDING';
+        }
+        else if ($status == 'deny')
+        {
+            $transaction->status = 'CANCELLED';
+        }
+        else if ($status == 'expire')
+        {
+            $transaction->status = 'CANCELLED';
+        }
+        else if ($status == 'cancel')
+        {
+            $transaction->status = 'CANCELLED';
+        }
+
+        // Save transaction
+        $transaction->save();
     }
 }
