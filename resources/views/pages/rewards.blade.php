@@ -13,7 +13,7 @@
             <div class="col-lg-12">
               <div class="text-center">
                 <img src="/images/rewards-banner.jpg" alt="">
-                <h2 class="mt-4">Coming Soon...</h2>
+                <h2 class="mt-4">Coming Soon Guys...</h2>
               </div>
             </div>
           </div>
